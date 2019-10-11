@@ -1,0 +1,10 @@
+{
+  "info": {
+    "description": "Team MC2: ARC2017 RGB-D Dataset",
+    "url": "http://mprg.jp/research/arc_dataset_2017_j",
+    "version": "1.0",
+    "year": 2017,
+    "contributor": "MPRG",
+    "date_created": "2018/07/12"
+  }
+}

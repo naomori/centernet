@@ -1,0 +1,204 @@
+{
+  "categories": [
+    {
+      "supercategory": "Binder",
+      "id": 1,
+      "name": "Binder"
+    },
+    {
+      "supercategory": "Balloons",
+      "id": 2,
+      "name": "Balloons"
+    },
+    {
+      "supercategory": "Baby_Wipes",
+      "id": 3,
+      "name": "Baby_Wipes"
+    },
+    {
+      "supercategory": "Toilet_Brush",
+      "id": 4,
+      "name": "Toilet_Brush"
+    },
+    {
+      "supercategory": "Toothbrushes",
+      "id": 5,
+      "name": "Toothbrushes"
+    },
+    {
+      "supercategory": "Crayons",
+      "id": 6,
+      "name": "Crayons"
+    },
+    {
+      "supercategory": "Salts",
+      "id": 7,
+      "name": "Salts"
+    },
+    {
+      "supercategory": "DVD",
+      "id": 8,
+      "name": "DVD"
+    },
+    {
+      "supercategory": "Glue_Sticks",
+      "id": 9,
+      "name": "Glue_Sticks"
+    },
+    {
+      "supercategory": "Eraser",
+      "id": 10,
+      "name": "Eraser"
+    },
+    {
+      "supercategory": "Scissors",
+      "id": 11,
+      "name": "Scissors"
+    },
+    {
+      "supercategory": "Green_Book",
+      "id": 12,
+      "name": "Green_Book"
+    },
+    {
+      "supercategory": "Socks",
+      "id": 13,
+      "name": "Socks"
+    },
+    {
+      "supercategory": "Irish_Spring",
+      "id": 14,
+      "name": "Irish_Spring"
+    },
+    {
+      "supercategory": "Paper_Tape",
+      "id": 15,
+      "name": "Paper_Tape"
+    },
+    {
+      "supercategory": "Touch_Tissues",
+      "id": 16,
+      "name": "Touch_Tissues"
+    },
+    {
+      "supercategory": "Knit_Gloves",
+      "id": 17,
+      "name": "Knit_Gloves"
+    },
+    {
+      "supercategory": "Laugh_Out_Loud_Jokes",
+      "id": 18,
+      "name": "Laugh_Out_Loud_Jokes"
+    },
+    {
+      "supercategory": "Pencil_Cup",
+      "id": 19,
+      "name": "Pencil_Cup"
+    },
+    {
+      "supercategory": "Mini_Marbles",
+      "id": 20,
+      "name": "Mini_Marbles"
+    },
+    {
+      "supercategory": "Neoprene_Weight",
+      "id": 21,
+      "name": "Neoprene_Weight"
+    },
+    {
+      "supercategory": "Wine_Glasses",
+      "id": 22,
+      "name": "Wine_Glasses"
+    },
+    {
+      "supercategory": "Water_Bottle",
+      "id": 23,
+      "name": "Water_Bottle"
+    },
+    {
+      "supercategory": "Reynolds_Pie",
+      "id": 24,
+      "name": "Reynolds_Pie"
+    },
+    {
+      "supercategory": "Reynolds_Wrap",
+      "id": 25,
+      "name": "Reynolds_Wrap"
+    },
+    {
+      "supercategory": "Robots_Everywhere",
+      "id": 26,
+      "name": "Robots_Everywhere"
+    },
+    {
+      "supercategory": "Duct_Tape",
+      "id": 27,
+      "name": "Duct_Tape"
+    },
+    {
+      "supercategory": "Sponges",
+      "id": 28,
+      "name": "Sponges"
+    },
+    {
+      "supercategory": "Speed_Stick",
+      "id": 29,
+      "name": "Speed_Stick"
+    },
+    {
+      "supercategory": "Index_Cards",
+      "id": 30,
+      "name": "Index_Cards"
+    },
+    {
+      "supercategory": "Ice_Cube_Tray",
+      "id": 31,
+      "name": "Ice_Cube_Tray"
+    },
+    {
+      "supercategory": "Table_Cover",
+      "id": 32,
+      "name": "Table_Cover"
+    },
+    {
+      "supercategory": "Measuring_Spoons",
+      "id": 33,
+      "name": "Measuring_Spoons"
+    },
+    {
+      "supercategory": "Bath_Sponge",
+      "id": 34,
+      "name": "Bath_Sponge"
+    },
+    {
+      "supercategory": "Pencils",
+      "id": 35,
+      "name": "Pencils"
+    },
+    {
+      "supercategory": "Mousetraps",
+      "id": 36,
+      "name": "Mousetraps"
+    },
+    {
+      "supercategory": "Face_Cloth",
+      "id": 37,
+      "name": "Face_Cloth"
+    },
+    {
+      "supercategory": "Tennis_Balls",
+      "id": 38,
+      "name": "Tennis_Balls"
+    },
+    {
+      "supercategory": "Spray_Bottle",
+      "id": 39,
+      "name": "Spray_Bottle"
+    },
+    {
+      "supercategory": "Flashlights",
+      "id": 40,
+      "name": "Flashlights"
+    }
+  ]
+}
