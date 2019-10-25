@@ -1,0 +1,249 @@
+From f9a5f2376be52730561a8ee966b9efdd766ac828 Mon Sep 17 00:00:00 2001
+From: naomori <naoki.morita@gmail.com>
+Date: Sat, 26 Oct 2019 02:24:36 +0900
+Subject: [PATCH 2/2] update
+
+---
+ src/hoge.sh                     |   1 +
+ src/lib/datasets/dataset/arc.py |  10 +--
+ src/lib/opts.py                 |  10 ++-
+ src/lib/trains/arc.py           | 141 ++++++++++++++++++++++++++++++++
+ src/lib/trains/train_factory.py |   4 +-
+ 5 files changed, 158 insertions(+), 8 deletions(-)
+ create mode 100644 src/hoge.sh
+ create mode 100644 src/lib/trains/arc.py
+
+diff --git a/src/hoge.sh b/src/hoge.sh
+new file mode 100644
+index 0000000..ea8e800
+--- /dev/null
++++ b/src/hoge.sh
+@@ -0,0 +1 @@
++python main.py arc --dataset arc --exp_id arc_resdcn18 --arch resdcn_18 --batch_size 8 --master_batch 8 --lr 5e-4 --gpus 0 --num_workers 4
+diff --git a/src/lib/datasets/dataset/arc.py b/src/lib/datasets/dataset/arc.py
+index 5941a51..ce782af 100644
+--- a/src/lib/datasets/dataset/arc.py
++++ b/src/lib/datasets/dataset/arc.py
+@@ -30,7 +30,7 @@ class ARC(data.Dataset):
+             self.annot_path = os.path.join(
+                 self.data_dir, 'annotations',
+                 '{}_arc.json').format(split)
+-        self.max_objs = 128
++        self.max_objs = 40
+         self.class_name = [
+             '__background__', 'Binder', 'Balloons', 'Baby_Wipes',
+             'Toilet_Brush', 'Toothbrushes', 'Crayons', 'Salts', 'DVD',
+@@ -43,10 +43,10 @@ class ARC(data.Dataset):
+             'Measuring_Spoons', 'Bath_Sponge', 'Pencils', 'Mousetraps',
+             'Face_Cloth', 'Tennis_Balls', 'Spray_Bottle', 'Flashlights']
+         self._valid_ids = [
+-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13,
+-            14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+-            24, 25, 27, 28, 31, 32, 33, 34, 35, 36,
+-            37, 38, 39, 40]
++            1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
++            11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
++            21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
++            31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+         self.cat_ids = {v: i for i, v in enumerate(self._valid_ids)}
+         self.voc_color = [(v // 32 * 64 + 64, (v // 8) % 4 * 64, v % 8 * 32) \
+                           for v in range(1, self.num_classes + 1)]
+diff --git a/src/lib/opts.py b/src/lib/opts.py
+index aeb7ee5..5a56be5 100755
+--- a/src/lib/opts.py
++++ b/src/lib/opts.py
+@@ -11,9 +11,9 @@ class opts(object):
+     self.parser = argparse.ArgumentParser()
+     # basic experiment setting
+     self.parser.add_argument('task', default='ctdet',
+-                             help='ctdet | ddd | multi_pose | exdet')
++                             help='ctdet | arc | ddd | multi_pose | exdet')
+     self.parser.add_argument('--dataset', default='coco',
+-                             help='coco | kitti | coco_hp | pascal')
++                             help='coco | arc | kitti | coco_hp | pascal')
+     self.parser.add_argument('--exp_id', default='default')
+     self.parser.add_argument('--test', action='store_true')
+     self.parser.add_argument('--debug', type=int, default=0,
+@@ -318,6 +318,12 @@ class opts(object):
+                    'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
+       if opt.reg_offset:
+         opt.heads.update({'reg': 2})
++    elif opt.task == 'arc':
++      # assert opt.dataset in ['pascal', 'coco']
++      opt.heads = {'hm': opt.num_classes,
++                   'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
++      if opt.reg_offset:
++        opt.heads.update({'reg': 2})
+     elif opt.task == 'multi_pose':
+       # assert opt.dataset in ['coco_hp']
+       opt.flip_idx = dataset.flip_idx
+diff --git a/src/lib/trains/arc.py b/src/lib/trains/arc.py
+new file mode 100644
+index 0000000..fea4f4f
+--- /dev/null
++++ b/src/lib/trains/arc.py
+@@ -0,0 +1,141 @@
++from __future__ import absolute_import
++from __future__ import division
++from __future__ import print_function
++
++import torch
++import numpy as np
++
++from models.losses import FocalLoss
++from models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
++from models.decode import ctdet_decode
++from models.utils import _sigmoid
++from utils.debugger import Debugger
++from utils.post_process import ctdet_post_process
++from utils.oracle_utils import gen_oracle_map
++from .base_trainer import BaseTrainer
++
++class ARCLoss(torch.nn.Module):
++    def __init__(self, opt):
++        super(ARCLoss, self).__init__()
++        self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
++        self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
++            RegLoss() if opt.reg_loss == 'sl1' else None
++        self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
++            NormRegL1Loss() if opt.norm_wh else \
++                RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
++        self.opt = opt
++
++    def forward(self, outputs, batch):
++        opt = self.opt
++        hm_loss, wh_loss, off_loss = 0, 0, 0
++        for s in range(opt.num_stacks):
++            output = outputs[s]
++            if not opt.mse_loss:
++                output['hm'] = _sigmoid(output['hm'])
++
++            if opt.eval_oracle_hm:
++                output['hm'] = batch['hm']
++            if opt.eval_oracle_wh:
++                output['wh'] = torch.from_numpy(gen_oracle_map(
++                    batch['wh'].detach().cpu().numpy(),
++                    batch['ind'].detach().cpu().numpy(),
++                    output['wh'].shape[3], output['wh'].shape[2])).to(
++                    opt.device)
++            if opt.eval_oracle_offset:
++                output['reg'] = torch.from_numpy(gen_oracle_map(
++                    batch['reg'].detach().cpu().numpy(),
++                    batch['ind'].detach().cpu().numpy(),
++                    output['reg'].shape[3], output['reg'].shape[2])).to(
++                    opt.device)
++
++            hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
++            if opt.wh_weight > 0:
++                if opt.dense_wh:
++                    mask_weight = batch['dense_wh_mask'].sum() + 1e-4
++                    wh_loss += (
++                                       self.crit_wh(output['wh'] * batch[
++                                           'dense_wh_mask'],
++                                                    batch['dense_wh'] * batch[
++                                                        'dense_wh_mask']) /
++                                       mask_weight) / opt.num_stacks
++                elif opt.cat_spec_wh:
++                    wh_loss += self.crit_wh(
++                        output['wh'], batch['cat_spec_mask'],
++                        batch['ind'], batch['cat_spec_wh']) / opt.num_stacks
++                else:
++                    wh_loss += self.crit_reg(
++                        output['wh'], batch['reg_mask'],
++                        batch['ind'], batch['wh']) / opt.num_stacks
++
++            if opt.reg_offset and opt.off_weight > 0:
++                off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
++                                          batch['ind'],
++                                          batch['reg']) / opt.num_stacks
++
++        loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + \
++               opt.off_weight * off_loss
++        loss_stats = {'loss': loss, 'hm_loss': hm_loss,
++                      'wh_loss': wh_loss, 'off_loss': off_loss}
++        return loss, loss_stats
++
++
++class ARCTrainer(BaseTrainer):
++    def __init__(self, opt, model, optimizer=None):
++        super(ARCTrainer, self).__init__(opt, model, optimizer=optimizer)
++
++    def _get_losses(self, opt):
++        loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss']
++        loss = ARCLoss(opt)
++        return loss_states, loss
++
++    def debug(self, batch, output, iter_id):
++        opt = self.opt
++        reg = output['reg'] if opt.reg_offset else None
++        dets = ctdet_decode(
++            output['hm'], output['wh'], reg=reg,
++            cat_spec_wh=opt.cat_spec_wh, K=opt.K)
++        dets = dets.detach().cpu().numpy().reshape(1, -1, dets.shape[2])
++        dets[:, :, :4] *= opt.down_ratio
++        dets_gt = batch['meta']['gt_det'].numpy().reshape(1, -1, dets.shape[2])
++        dets_gt[:, :, :4] *= opt.down_ratio
++        for i in range(1):
++            debugger = Debugger(
++                dataset=opt.dataset, ipynb=(opt.debug == 3),
++                theme=opt.debugger_theme)
++            img = batch['input'][i].detach().cpu().numpy().transpose(1, 2, 0)
++            img = np.clip(((
++                                   img * opt.std + opt.mean) * 255.), 0,
++                          255).astype(np.uint8)
++            pred = debugger.gen_colormap(output['hm'][i].detach().cpu().numpy())
++            gt = debugger.gen_colormap(batch['hm'][i].detach().cpu().numpy())
++            debugger.add_blend_img(img, pred, 'pred_hm')
++            debugger.add_blend_img(img, gt, 'gt_hm')
++            debugger.add_img(img, img_id='out_pred')
++            for k in range(len(dets[i])):
++                if dets[i, k, 4] > opt.center_thresh:
++                    debugger.add_coco_bbox(dets[i, k, :4], dets[i, k, -1],
++                                           dets[i, k, 4], img_id='out_pred')
++
++            debugger.add_img(img, img_id='out_gt')
++            for k in range(len(dets_gt[i])):
++                if dets_gt[i, k, 4] > opt.center_thresh:
++                    debugger.add_coco_bbox(dets_gt[i, k, :4], dets_gt[i, k, -1],
++                                           dets_gt[i, k, 4], img_id='out_gt')
++
++            if opt.debug == 4:
++                debugger.save_all_imgs(opt.debug_dir,
++                                       prefix='{}'.format(iter_id))
++            else:
++                debugger.show_all_imgs(pause=True)
++
++    def save_result(self, output, batch, results):
++        reg = output['reg'] if self.opt.reg_offset else None
++        dets = ctdet_decode(
++            output['hm'], output['wh'], reg=reg,
++            cat_spec_wh=self.opt.cat_spec_wh, K=self.opt.K)
++        dets = dets.detach().cpu().numpy().reshape(1, -1, dets.shape[2])
++        dets_out = ctdet_post_process(
++            dets.copy(), batch['meta']['c'].cpu().numpy(),
++            batch['meta']['s'].cpu().numpy(),
++            output['hm'].shape[2], output['hm'].shape[3], output['hm'].shape[1])
++        results[batch['meta']['img_id'].cpu().numpy()[0]] = dets_out[0]
+diff --git a/src/lib/trains/train_factory.py b/src/lib/trains/train_factory.py
+index 4a29352..958b78f 100644
+--- a/src/lib/trains/train_factory.py
++++ b/src/lib/trains/train_factory.py
+@@ -3,6 +3,7 @@ from __future__ import division
+ from __future__ import print_function
+ 
+ from .ctdet import CtdetTrainer
++from .arc import ARCTrainer
+ from .ddd import DddTrainer
+ from .exdet import ExdetTrainer
+ from .multi_pose import MultiPoseTrainer
+@@ -11,5 +12,6 @@ train_factory = {
+   'exdet': ExdetTrainer, 
+   'ddd': DddTrainer,
+   'ctdet': CtdetTrainer,
+-  'multi_pose': MultiPoseTrainer, 
++  'arc': ARCTrainer,
++  'multi_pose': MultiPoseTrainer,
+ }
+-- 
+2.17.1
+

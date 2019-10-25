@@ -1,0 +1,25 @@
+--- sshd_config.orig    2019-10-24 17:03:39.993604170 +0000
++++ sshd_config 2019-10-24 16:59:20.989606640 +0000
+@@ -30,11 +30,13 @@
+
+ #LoginGraceTime 2m
+ #PermitRootLogin prohibit-password
++PermitRootLogin yes
+ #StrictModes yes
+ #MaxAuthTries 6
+ #MaxSessions 10
+
+ #PubkeyAuthentication yes
++PubkeyAuthentication yes
+
+ # Expect .ssh/authorized_keys2 to be disregarded by default in future.
+ #AuthorizedKeysFile    .ssh/authorized_keys .ssh/authorized_keys2
+@@ -54,6 +56,7 @@
+
+ # To disable tunneled clear text passwords, change to no here!
+ #PasswordAuthentication yes
++PasswordAuthentication yes
+ #PermitEmptyPasswords no
+
+ # Change to yes to enable challenge-response passwords (beware issues with
+
