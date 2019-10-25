@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # COCO オブジェクトの生成
 print("generate COCO object")
-ann_path = "train_coco.json"
+ann_path = "train_arc.json"
 coco = COCO(ann_path)
 
 # カテゴリIDを取得する

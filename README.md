@@ -88,7 +88,7 @@ conda でもプロキシを超えられるように設定しておきます。
 ```bash
 root@centernet:~# vim ~/.condarc
 ```
-```python
+```config
 proxy_servers:
     http: http://[プロキシアドレス]:[ポート番号]
     https: https://[プロキシアドレス]:[ポート番号]

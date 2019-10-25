@@ -45,7 +45,7 @@ class Annotation:
         Annotation.id += 1
         bboxes = BoundingBoxes(bboxes_filename)
         df_bboxes = bboxes.fetch_df()
-        iscrowd = 1 if len(df_bboxes) > 1 else 0
+        iscrowd = 0 # 1 if len(df_bboxes) > 1 else 0
         keys = ['start_id', 'file_name', 'iscrowd', 'bboxes']
         values = [Annotation.id, os.path.basename(bboxes_filename),
                   iscrowd, df_bboxes]
@@ -62,7 +62,7 @@ class Annotation:
             entry['image_id'] = image_id
             entry['iscrowd'] = self.item['iscrowd']
             entry['category_id'] = df_bbox.Index
-            entry['bbox'] = [ df_bbox.center_x_pixel, df_bbox.center_y_pixel,
+            entry['bbox'] = [ df_bbox.xmin_pixel, df_bbox.ymin_pixel,
                               df_bbox.width_pixel, df_bbox.height_pixel ]
             self.json.append(entry)
             start_id += 1

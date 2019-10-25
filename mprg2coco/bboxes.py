@@ -24,10 +24,12 @@ class BoundingBoxes:
         self.df = pd.read_csv(filename, header=None, sep=' ',
                               names=self.field_names, index_col=0,
                               dtype=self.field_dtype)
-        self.df['center_x_pixel'] = self.df['center_x'] * self.width
-        self.df['center_y_pixel'] = self.df['center_y'] * self.height
         self.df['width_pixel'] = self.df['width'] * self.width
         self.df['height_pixel'] = self.df['height'] * self.height
+        self.df['xmin_pixel'] = (self.df['center_x'] * self.width) - \
+                                (self.df['width_pixel']/2)
+        self.df['ymin_pixel'] = (self.df['center_y'] * self.height) - \
+                                (self.df['height_pixel'] / 2)
 
     def fetch_df(self):
         return self.df
@@ -39,12 +41,12 @@ if __name__ == "__main__":
     args = sys.argv
     filename = args[1]
 
-    bboxes = BoudingBoxes(filename)
+    bboxes = BoundingBoxes(filename)
     bboxes.show()
 
     df_bboxes = bboxes.fetch_df()
     print(len(df_bboxes))
     for df_bbox in df_bboxes.itertuples():
         print(df_bbox.Index,
-              df_bbox.center_x_pixel, df_bbox.center_y_pixel,
+              df_bbox.xmin_pixel, df_bbox.ymin_pixel,
               df_bbox.width_pixel, df_bbox.height_pixel)
