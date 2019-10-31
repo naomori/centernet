@@ -24,21 +24,17 @@ $ docker pull nvcr.io/nvidia/pytorch:19.09-py3
 コンテナを生成します。
 ボリュームなども必要に応じて指定してください。
 
-`--net host`, `-e DISPLAY`, `-v $HOME/.Xauthority` などは、
-SSH + X11 転送で接続しているリモートホスト上で走っている
-Docker コンテナの中で X client を動作させたときに、
-ssh client 側の X server に接続させたいときの設定なので、
-必要なければオプション指定しなくても良いと思います。
-
 ```bash
 docker run --detach \
-        --net host \
-	-e DISPLAY=$DISPLAY \
+        -p 8888:8888 \
+        -p 6066:6066 \
+        -p 2222:22 \
+        --privileged \
         --gpus all \
         --shm-size=1g --ulimit memlock=-1 \
         -it \
-	-v $HOME/.Xauthority:/root/.Xauthority:rw \
         -v /home/arc2018:/workspace/arc2018 \
+        -v /home/pytorch_advanced:/workspace/pytorch_advanced \
         --hostname centernet \
         --name centernet \
         nvcr.io/nvidia/pytorch:19.09-py3
@@ -82,8 +78,7 @@ root@centernet:~# apt update && apt upgrade -y
 CenterNet の環境は conda で構築するようなので、
 conda でもプロキシを超えられるように設定しておきます。
 
-`.condarc` は python スクリプトなので、
-インデント(spacex4)に注意してください。
+`.condarc` は python なので、Indent(spacex4)に注意してください。
 
 ```bash
 root@centernet:~# vim ~/.condarc
@@ -227,6 +222,7 @@ CenterNet では 4.X が前提みたいです。
 また、テストの前に model をダウンロードする必要があるので、
 [Model zoo](https://github.com/xingyizhou/CenterNet/blob/master/readme/MODEL_ZOO.md)から
 ダウンロードして、以下のディレクトリに配置してください。
+Google Drive に置いてあり、社内からはアクセスできないため、何らかの方法で適切にダウンロードしてください。
 
 ```bash
 (CenterNet) root@centernet:~/CenterNet/models# pwd
@@ -254,57 +250,10 @@ Reinstalling the application may fix this problem.
 Aborted (core dumped)
 ```
 
-[ここ](https://askubuntu.com/questions/308128/failed-to-load-platform-plugin-xcb-while-launching-qt5-app-on-linux-without/1091277)を見ると、Qt関連のライブラリを入れ直せとあるので、やってみる。
-
-```bash
-(base) root@centernet:/workspace# apt-get --reinstall install libqt5dbus5 \
-libqt5widgets5 libqt5network5 libqt5gui5 libqt5core5a \
-libdouble-conversion1 libxcb-xinerama0
-```
-
-やってみると、上手く行った気がする。
-```bash
-(CenterNet) root@centernet:~/CenterNet/src# python demo.py ctdet --demo ../images/17790319373_bd19b24cfc_k.jpg --load_
-model ../models/ctdet_coco_dla_2x.pth --debug 2
-Fix size testing.
-training chunk_sizes: [1]
-The output will be saved to  /root/CenterNet/src/lib/../../exp/ctdet/default
-heads {'hm': 80, 'wh': 2, 'reg': 2}
-Creating model...
-loaded ../models/ctdet_coco_dla_2x.pth, epoch 230
-QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-root'
-qt.qpa.screen: QXcbConnection: Could not connect to display localhost:10.0
-Could not connect to any X display.
-```
-が、Xの転送が上手く行っていない。
-
-こんな感じでコンテナを作ってみたりもしたけど、駄目っぽい。
-docker ホスト側で X server 上がっていないと駄目なんじゃないかなと
-思ってみたり。
-
-```bash
-export XAUTHORITY=$HOME/.Xauthority
-docker run --detach \
-        --net host \
-        -e DISPLAY=$DISPLAY \
-        -e XDG_RUNTIME_DIR=/tmp \
-	-e XAUTHORITY=$HOME/.Xauthority \
-        --gpus all \
-        --shm-size=1g --ulimit memlock=-1 \
-        -it \
-        -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -v $HOME/.Xauthority:/root/.Xauthority:rw \
-        -v /home/arc2018:/workspace/arc2018 \
-        --hostname centernet \
-        --name centernet \
-        centernet:0.2
-```
-
-Xの転送は諦めることにします。
-
 #### save the image
 `demo.py`は画像を表示(imshow)しているからXの転送が必要なのであって、
-画像をファイルに保存したら大丈夫だろうということでやってみることにします。
+画像をファイルに保存したら大丈夫だろうということで、
+imshow のところを imwrite に変更します。OKでした。
 
 - - -
 # Evaluation
@@ -330,6 +279,7 @@ Xの転送は諦めることにします。
 今回はGPU１つのPCで実行していますので、`CUDA_VISIBLE_DEVICES`は不要なのですが、
 複数のGPUを搭載したPCで特定のGPUでのみ実行したい場合は、`CUDA_VISIBLE_DEVICES`で
 使用したいGPU-IDを指定すると良いです。
+`--gpus`オプションでも指定できるので、`CUDA_VISIBLE_DEVICES` は不要かもしれません。
 ```bash
 (CenterNet) root@centernet:~/CenterNet/src# export CUDA_VISIBLE_DEVICES=0
 (CenterNet) root@centernet:~/CenterNet/src# python test.py ctdet --exp_id coco_dla --keep_res --load_model ../models/ctdet_coco_dla_2x.pth
@@ -371,7 +321,7 @@ Xの転送は諦めることにします。
 ```
 
 - - -
-# Training
+# Training for ARC 2018 Datasets
 
 Training 用のデータは、`data/arc/{annotations,train,val}` に置きます。
 
@@ -383,33 +333,44 @@ hourgralss での Training では ExtremeNet のモデル(ExtremeNet_500000)を�
 [このツール](https://github.com/xingyizhou/CenterNet/blob/master/src/tools/convert_hourglass_weight.py)
 を使って変換します。このスクリプトはGPUを使用するようです。
 
-用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を利用して、GPUx1の環境に合わせます。
+用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を参考に、GPUx1の環境に合わせます。
 具体的には、`--gpus` の指定を1つだけにすることと、
 `batch_size` をそのGPU数分へ変更するだけです。
 
 ```bash
-(CenterNet) root@centernet:~/centernet/CenterNet.org/src# python main.py arc --dataset arc --exp_id arc_hg --arch hourglass --batch_size 2 --master_batch 4 --lr 2.5e-4 --load_model ../models/ExtremeNet_500000.pth --gpus 1
+(CenterNet) # python main.py arc --dataset arc \
+	--exp_id arc_hg --arch hourglass \
+	--batch_size 4 --master_batch 4 \
+	--lr 2.5e-4 \
+	--load_model ../models/ExtremeNet_500000.pth --gpus 1
 ```
 
 - - -
-# Test
+# Test for ARC 2018 Datasets
 
 それでは作成出来たモデルを使って、テストします。
 
-用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を利用して、GPUx1の環境に合わせます。
+用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を参考に、GPUx1の環境に合わせます。
 また、データセットとして用意したARC2018データセットを指定します。
 
 ```bash
 # test
-python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass \
+  --gpus 1 --num_workers 4 --keep_res --resume \
+  --load_model ../exp/arc/arc_hg/model_last.pth 
 # flip test
-python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume --flip_test
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass \
+  --gpus 1 --num_workers 4 --keep_res --resume --flip_test \
+  --load_model ../exp/arc/arc_hg/model_last.pth 
 # multi scale test
-python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume --flip_test --test_scales 0.5,0.75,1,1.25,1.5
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass \
+  --gpus 1 --num_workers 4 --keep_res --resume --flip_test \
+  --test_scales 0.5,0.75,1,1.25,1.5 \
+  --load_model ../exp/arc/arc_hg/model_last.pth 
 ```
 
 - - -
-# Evaluation
+# Evaluation for ARC 2018 Datasets
 
 MPRG用の評価スクリプトを使用するために、
 検出結果をテキストファイルに出力する必要があります。
