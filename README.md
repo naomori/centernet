@@ -373,35 +373,62 @@ Xの転送は諦めることにします。
 - - -
 # Training
 
-それでは同様に Traning をしてみます。
-まずは coco の train2017.zip を持ってきます。
-18GBもあるので大変ですがダウンロードしておきます。
-ダウンロードしたら所定のディレクトリに展開しておきます。
+Training 用のデータは、`data/arc/{annotations,train,val}` に置きます。
+
+hourgralss での Training では ExtremeNet のモデル(ExtremeNet_500000)をバックボーンに使用するため、
+ダウンロードが必要です。
+ダウンロードは[ここ](https://github.com/xingyizhou/ExtremeNet)からです。
+
+ダウンロードしたモデルは `*.pkl` 形式となっており、`*.pth`形式に変換したいため、
+[このツール](https://github.com/xingyizhou/CenterNet/blob/master/src/tools/convert_hourglass_weight.py)
+を使って変換します。このスクリプトはGPUを使用するようです。
+
+用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を利用して、GPUx1の環境に合わせます。
+具体的には、`--gpus` の指定を1つだけにすることと、
+`batch_size` をそのGPU数分へ変更するだけです。
 
 ```bash
-(CenterNet) root@centernet:~/CenterNet/data/coco# unzip /workspace/coco/train2017.zip
+(CenterNet) root@centernet:~/centernet/CenterNet.org/src# python main.py arc --dataset arc --exp_id arc_hg --arch hourglass --batch_size 2 --master_batch 4 --lr 2.5e-4 --load_model ../models/ExtremeNet_500000.pth --gpus 1
 ```
 
-用意されている training 用スクリプトを修正して、GPUx1の環境に合わせます。
-具体的には、``--gpus` の指定を1つだけにすることと、
-batch_size` を 114 から 28 へ変更するだけです。
-ですが、`batch_size`については、`--master_batch 18` となっているので変わらないかもしれません。
+- - -
+# Test
+
+それでは作成出来たモデルを使って、テストします。
+
+用意されている training 用スクリプト(`experiments/ctdet_coco_hg.sh`)を利用して、GPUx1の環境に合わせます。
+また、データセットとして用意したARC2018データセットを指定します。
+
 ```bash
-(CenterNet) root@centernet:~/CenterNet# diff -u experiments/ctdet_coco_resdcn18.sh  experiments/ctdet_coco_resdcn18_gpu1.sh
---- experiments/ctdet_coco_resdcn18.sh  2019-10-10 10:14:38.000000000 +0000
-+++ experiments/ctdet_coco_resdcn18_gpu1.sh     2019-10-10 14:54:02.249213989 +0000
-@@ -1,10 +1,10 @@
- cd src
- # train
--python main.py ctdet --exp_id coco_resdcn18 --arch resdcn_18 --batch_size 114 --master_batch 18 --lr 5e-4 --gpus 0,1,2,3 --num_workers 16
-+python main.py ctdet --exp_id coco_resdcn18_gpu1 --arch resdcn_18 --batch_size 28 --master_batch 18 --lr 5e-4 --gpus 0 --num_workers 4
- # test
--python test.py ctdet --exp_id coco_resdcn18 --arch resdcn_18 --keep_res --resume
-+python test.py ctdet --exp_id coco_resdcn18_gpu1 --arch resdcn_18 --keep_res --resume
- # flip test
--python test.py ctdet --exp_id coco_resdcn18 --arch resdcn_18 --keep_res --resume --flip_test
-+python test.py ctdet --exp_id coco_resdcn18_gpu1 --arch resdcn_18 --keep_res --resume --flip_test
- # multi scale test
--python test.py ctdet --exp_id coco_resdcn18 --arch resdcn_18 --keep_res --resume --flip_test --test_scales 0.5,0.75,1,1.25,1.5
-+python test.py ctdet --exp_id coco_resdcn18_gpu1 --arch resdcn_18 --keep_res --resume --flip_test --test_scales 0.5,0.75,1,1.25,1.5
+# test
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume
+# flip test
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume --flip_test
+# multi scale test
+python test.py arc --dataset arc --exp_id arc_hg --arch hourglass --gpus 1 --keep_res --resume --flip_test --test_scales 0.5,0.75,1,1.25,1.5
 ```
+
+- - -
+# Evaluation
+
+MPRG用の評価スクリプトを使用するために、
+検出結果をテキストファイルに出力する必要があります。
+
+以下のスクリプトを使用すると、current directory に
+`ファイル名.png`,`ファイル名.txt`を出力します。
+* `ファイル名.png`は、検出したBoundingBoxを元画像に描画したものです
+* `ファイル名.txt`は、検出したBoundingBox情報を以下の形式(space区切り)で出力したものです
+	- ItemID Confidence x_min y_min x_max y_max 
+	- ItemIDはアイテムのカテゴリIDです
+	- Confidenceはその確信度
+	- (x_min, y_min)は左上の座標[pixel]
+	- (x_max, y_max)は右下の座標[pixel]
+
+```bash
+$ python demo.py arc \
+	--arch hourglass \
+	--demo ../data/arc/val/hogehoge.png \
+	--load_model ../exp/arc/arc_hg/model_last.pth
+```
+
+

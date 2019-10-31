@@ -60,6 +60,7 @@ class Annotation:
             entry = {}
             entry['id'] = start_id
             entry['image_id'] = image_id
+            entry['area'] = 0
             entry['iscrowd'] = self.item['iscrowd']
             entry['category_id'] = df_bbox.Index
             entry['bbox'] = [ df_bbox.xmin_pixel, df_bbox.ymin_pixel,
