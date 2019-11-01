@@ -147,6 +147,12 @@ $ slogin -p 2222 root@localhost
 
 ## Docker Container 上で jupyter を準備
 
+最初に jupyter lab をインストールします。
+```bash
+(base) root@centernet:~# conda activate CenterNet
+(CenterNet) root@centernet:~# conda install -c conda-forge jupyterlab
+``` 
+
 Jupyter 利用上のアクセス制限を外します。
 
 まずは、設定ファイルを生成します。
@@ -227,7 +233,95 @@ Local PCからブラウザで以下のURLにアクセスしてみます。
 `http://<Remote Server のIPアドレス>:8888`  
 アクセスできました。
 
+## Docker Container 起動時に sshd & jupyter lab を起動する
+
+このままでは、 Docker Container を立ち上げたときに sshd も jupyter lab も立ち上がっていないため、
+一度 Docker Container にログインして、手動で立ち上げる必要があります。
+とても面倒ですし、忘れがちです。
+
+そこで、自動で sshd も jupyter lab も起動するようにします。
+[こちら](https://docs.docker.com/engine/examples/running_ssh_service/)が
+参考になります。
+ただし、jupyter labは自動で起動できなかったので、sshdだけ自動化しておきます。
+
+jupyter lab を簡単に起動するためのスクリプトを用意します。
+```bash
+$ docker exec -it centernet bash
+(base) root@centernet:~# vim /usr/local/bin/jupyterlab_start.sh
+#!bin/bash
+nohup /opt/conda/envs/CenterNet/bin/jupyter lab --config=/root/.jupyter/jupyter_notebook_config.py &> /dev/null &
+(base) root@centernet:~# chmod +x /usr/local/bin/jupyterlab_start.sh
+```
+
+そして、このイメージを `docker commit` で保存しておきます。
+次に Dockerfile を作成します。
+```bash
+$ vim Dockerfile
+```
+```Dockerfile
+FROM centernet:1.1
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+```
+
+この Dockerfile をもとに、イメージを作成します。
+```bash
+$ docker build -t ceneternet:1.2 .
+```
+
+これで、sshdが自動で起動するイメージが出来ました。
+あとは、これまでと同様に centernet:1.2 から container を生成し、
+```bash
+$ docker exec -it centernet bash
+(base) root@centernet:~# /usr/local/bin/jupyterlab_start.sh
+```
+で jupyter lab を起動できます。
+
 # Local PC の準備
+
+## ssh access without pass-phrase
+Local PC から Remote Server 上の Docker Container に SSH でアクセスするときの
+認証には公開鍵を使用することにします。また、パスフレーズは空にしておきます。
+パスフレーズを空にするのは簡単で、パスフレーズの入力時にリターンキーを押すだけです。
+```bash
+$ ssh-keygen -t rsa
+```
+作成した公開鍵を Remote Server 上の Docker Container に配置します。
+まずは、Local PCで作成した公開鍵を Remote Sever 上に転送し、
+```bash
+$ scp ~/.ssh/id_rsa.pub <Remote Server>:
+```
+転送された公開鍵を Remote Server 上で Docker Container にコピーします。
+```bash
+$ docker cp id_rsa.pub centernet:/root/
+```
+Docker Container にログインし、ssh の公開鍵を設定しておきます。　
+```bash
+$ docker exec -it center bash
+(base) root@centernet:~# mkdir .ssh
+(base) root@centernet:~# chmod 700 .ssh
+(base) root@centernet:~# touch .ssh/authorized_keys
+(base) root@centernet:~# chmod 600 .ssh/authorized_keys
+(base) root@centernet:~# cat id_rsa.pub >> .ssh/authorized_keys
+```
+
+## Local PC から Remote Server のポート転送
+
+Local PC から Remote Server にポート転送の設定をします。
+このポート転送をすることで、Local PC から Remote Server 経由で
+Remote Server 上の Docker Container にアクセスすることができます。
+```bash
+$ ssh -fN -X -L 8888:localhost:8888 <Remote Server>
+$ ssh -fN -X -L 2222:localhost:2222 <Remote Server>
+```
+つまり、 Local PC の Port`8888`にアクセスすると、
+Remote Server経由で Docker Container の Port`8888` にアクセスし、
+Local PC の Port `2222` にアクセスすると、
+Remote Server経由で Docker Container の Port`22` にアクセスできるようになります。
 
 - - -
 [PyCharm]: https://www.jetbrains.com/pycharm/
