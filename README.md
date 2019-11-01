@@ -27,17 +27,16 @@ $ docker pull nvcr.io/nvidia/pytorch:19.09-py3
 ```bash
 docker run --detach \
         -p 8888:8888 \
-        -p 6066:6066 \
         -p 2222:22 \
         --privileged \
         --gpus all \
         --shm-size=1g --ulimit memlock=-1 \
         -it \
         -v /home/arc2018:/workspace/arc2018 \
-        -v /home/pytorch_advanced:/workspace/pytorch_advanced \
+        -v /home/centernet:/workspace/centernet \
         --hostname centernet \
         --name centernet \
-        nvcr.io/nvidia/pytorch:19.09-py3
+        nvcr.io/nvidia/pytorch:19.10-py3
 ```
 
 ## setup container
@@ -138,37 +137,38 @@ root@centernet:~# exit
 ```bash
 $ docker exec -it centernet bash
 ```
+```bash
+(base) root@centernet:/workspace# conda activate CenterNet
+```
+まずは default でインストールされているものを update しておきます。
+```bash
+(CenterNet) root@centernet:~# conda update -n base -c defaults conda
+```
 
 CenterNet は pytorch 0.4.1 で開発をしたようですが、
 pytorch 1.1.0 で実行できた人がいて、情報を共有してくれているようなので、
 [こちらに](https://github.com/xingyizhou/CenterNet/issues/7)にしたがって、作業を進めます。
-
 ```bash
-(base) root@centernet:/workspace# conda activate CenterNet
-(CenterNet) root@centernet:/workspace#
 (CenterNet) root@centernet:/workspace# conda install pytorch=1.1 torchvision -c pytorch
 ```
 
 ### Download CenterNet
-
 ```bash
 (CenterNet) root@centernet:~# git clone https://github.com/xingyizhou/CenterNet.git
 ```
 
-作業を進める上で python パッケージが必要なのでインストールしておきます。
+### 1.build nms
 
+作業を進める上で Cython パッケージが必要なのでインストールしておきます。
 ```bash
 (CenterNet) root@centernet:~/CenterNet/src/lib/external# conda install Cython
 ```
-
-### 1.build nms
 
 ```bash
 (CenterNet) root@centernet:~# cd CenterNet/src/lib/external/
 (CenterNet) root@centernet:~/CenterNet/src/lib/external# python setup.py build_ext --inplace
 ```
 多少 warning が出ますが、気にしなくて大丈夫みたいです。
-
 
 ### 2. clone and build original DCN2
 
@@ -212,7 +212,6 @@ demo スクリプトで `import cv2` を要求されるので、以下でイン�
 CenterNet では 4.X が前提みたいです。
 
 ```bash
-(CenterNet) root@centernet:~# conda update -n base -c defaults conda
 (CenterNet) root@centernet:~# conda install -c conda-forge opencv=4.1.1
 (CenterNet) root@centernet:~# conda install -c conda-forge numba easydict scipy
 (CenterNet) root@centernet:~# conda install -c conda-forge progress matplotlib
@@ -391,5 +390,3 @@ $ python demo.py arc \
 	--demo ../data/arc/val/hogehoge.png \
 	--load_model ../exp/arc/arc_hg/model_last.pth
 ```
-
-
