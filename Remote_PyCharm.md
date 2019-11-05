@@ -244,7 +244,8 @@ Local PCからブラウザで以下のURLにアクセスしてみます。
 参考になります。
 ただし、jupyter labは自動で起動できなかったので、sshdだけ自動化しておきます。
 
-jupyter lab を簡単に起動するためのスクリプトを用意します。
+jupyter lab を簡単に起動するためのスクリプトを用意して、
+後で簡単に jupyter lab だけ立ち上げられるようにしておきます。
 ```bash
 $ docker exec -it centernet bash
 (base) root@centernet:~# vim /usr/local/bin/jupyterlab_start.sh
@@ -281,6 +282,9 @@ $ docker exec -it centernet bash
 ```
 で jupyter lab を起動できます。
 
+上記の centernet のタグについては、好きは番号を使ってください。
+
+- - -
 # Local PC の準備
 
 ## ssh access without pass-phrase
@@ -322,6 +326,8 @@ $ ssh -fN -X -L 2222:localhost:2222 <Remote Server>
 Remote Server経由で Docker Container の Port`8888` にアクセスし、
 Local PC の Port `2222` にアクセスすると、
 Remote Server経由で Docker Container の Port`22` にアクセスできるようになります。
+
+## 
 
 - - -
 [PyCharm]: https://www.jetbrains.com/pycharm/
