@@ -10,4 +10,4 @@ docker run --detach \
   -v /home/centernet:/workspace/centernet \
   --hostname centernet \
   --name centernet \
-  centernet:1.0
+  centernet:3.0
