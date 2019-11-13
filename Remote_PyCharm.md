@@ -1,4 +1,4 @@
-# Remote PC の Docker Container 上の Python 実行環境を Local PC の PyCharm から利用する
+# Remote PC の Docker Container 上の Python 実行環境を Local PC の PyCharm Professional から利用する
 
 Python で開発をしていると IDE が欲しくなります。
 Python の IDE として現在とても使いやすいと感じているのが、[PyCharm][]です。
@@ -14,7 +14,7 @@ GPU を搭載したサーバは複数の開発者からアクセスできるリ�
 Remote PC の Docker Container 上にコピーしてデバッグして修正して、
 を繰り返すのはとても長く辛い開発になります。
 
-つまり、手元のPCで [PyCharm][] を使いつつ、
+つまり、手元のPCで [PyCharm Professional][] を使いつつ、
 動作環境はリモートPCの Docker Container を使用する。
 という環境を使いたくなります。
 
@@ -327,7 +327,47 @@ Remote Server経由で Docker Container の Port`8888` にアクセスし、
 Local PC の Port `2222` にアクセスすると、
 Remote Server経由で Docker Container の Port`22` にアクセスできるようになります。
 
-## 
+## PyCharm での設定
+
+PyCharm には以下の設定を行います。
+
+1. SSH Interpreter
+2. Path Mappings
+3. Remote Interpreter Path
+
+### 1. SSH Interpreter
+まずは、SSH 経由で Local PC から Remote Server 上の Docker Container に
+インストールした conda の python 環境を指定します。
+[こちら][remote-ssh]に公式の説明があります。
+このとき、Interpreterのパス指定のところで、使用する conda の python 環境を指定します。
+今回の場合、conda で `CenterNet` という環境を作成したので、
+以下のように指定しました。
+```bash
+/opt/conda/envs/CenterNet/bin/python
+```
+
+### 2. Path Mappings
+また、`Project Interpreter` の `Path Mappings` 設定において、
+PyCharm による変更の同期をとるパスの設定を行います。
+今回の場合は、Local PC上の `Project Workspace` と
+Remote Server の Docker Container 上の `Project Workspace` をそれぞれ
+Local Path と Remote Path に設定します。
+こうすることで、Local Path に行った修正が Remote Path に ssh(sftp) で反映されるようになります。
+
+### 3. Remote Interpreter Path
+Remote Interpreter にパスを設定したい場合は、
+`Project Interpreter`の設定から、`show all`ですべてのインタプリタを表示した後、
+`1.SSH Interpreter`で指定したものを選択します。
+そして、右側のアイコンの一番下にあるディレクトリ構造の絵のアイコンの
+`show paths for the selected interpreter` を押下します。
+ここに、Docker Container上のパスを追加することで、
+Remote Interpreter にパスを追加することができます。
+
+### 4. Jupyter Server
+`Build,Execution,Deployment` の `jupyter server` の設定で、
+`Configured Server`にチェックを入れ、`http://localhost:8888`を入力します。
+これによって、 Jupyter Server として Remote Server の Docker Container 上で動作している
+Jupyter Lab に接続することができます。
 
 - - -
 [PyCharm]: https://www.jetbrains.com/pycharm/
@@ -336,3 +376,4 @@ Remote Server経由で Docker Container の Port`22` にアクセスできるよ
 [PyTorch]: https://pytorch.org/
 [Python]: https://www.python.org/
 [CenterNet]: https://github.com/xingyizhou/CenterNet
+[remote-ssh]: https://pleiades.io/help/pycharm/configuring-remote-interpreters-via-ssh.html

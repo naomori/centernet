@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from pylab import *
 import argparse
 
-import myfunc
+from . import myfunc
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--image', '-i', type = str, default = './image/', help = 'Path of test images dir')
