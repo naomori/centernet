@@ -153,7 +153,7 @@ $ sudo apt install ImageMagick
 ```
 
 - - -
-* [COCO]: http://cocodataset.org/#home
-* [Deep Learing - MS COCO データセットの概要]: http://pynote.hatenablog.com/entry/mscoco
-* [MPRG ARCdataset]: http://mprg.jp/research/arc_dataset_2017_j
-* [COCO API]: https://github.com/cocodataset/cocoapi
+[COCO]: http://cocodataset.org/#home
+[Deep Learing - MS COCO データセットの概要]: http://pynote.hatenablog.com/entry/mscoco
+[MPRG ARCdataset]: http://mprg.jp/research/arc_dataset_2017_j
+[COCO API]: https://github.com/cocodataset/cocoapi

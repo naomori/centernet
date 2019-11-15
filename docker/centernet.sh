@@ -7,7 +7,6 @@ docker run --detach \
   --shm-size=1g --ulimit memlock=-1 \
   -it \
   -v /home/arc2018:/workspace/arc2018 \
-  -v /home/centernet:/workspace/centernet \
   --hostname centernet \
   --name centernet \
   centernet:3.0

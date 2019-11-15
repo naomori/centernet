@@ -330,12 +330,25 @@ $ sh ./make.sh
 ```
 
 ## CenterNet の実行
-全然動かん。
+動作させる前に、`lib/utils/oracle_utils.py`ファイルの編集が必要です。
+理由は、`numba`モジュールのインポートで必ずスタックしてしまうためです。
+その原因は分かりません。
 
-必ずここで固まる。
-```python
-from trains.train_factory import train_factory
+```diff
+diff --git a/src/lib/utils/oracle_utils.py b/src/lib/utils/oracle_utils.py
+index d54c35e..d6a12e8 100644
+--- a/src/lib/utils/oracle_utils.py
++++ b/src/lib/utils/oracle_utils.py
+@@ -3,9 +3,9 @@ from __future__ import division
+ from __future__ import print_function
+
+ import numpy as np
+-import numba
++# import numba
+
+-@numba.jit(nopython=True, nogil=True)
++# @numba.jit(nopython=True, nogil=True)
+ def gen_oracle_map(feat, ind, w, h):
+   # feat: B x maxN x featDim
+   # ind: B x maxN
 ```
-突破出来るかもしれない。
-* すべての `*.py` に実行権限を付ける
-* `trains/__init__.py` の作成し忘れ

@@ -334,6 +334,10 @@ PyCharm には以下の設定を行います。
 1. SSH Interpreter
 2. Path Mappings
 3. Remote Interpreter Path
+4. Jupyter Server
+
+1,2,3 の設定はPyCharmのドキュメント:[SSHを使ってリモートインタープリターを設定する](https://pleiades.io/help/pycharm/configuring-remote-interpreters-via-ssh.html)
+に詳しく説明されていますので、こちらを参照した方が良いかもしれません。
 
 ### 1. SSH Interpreter
 まずは、SSH 経由で Local PC から Remote Server 上の Docker Container に
@@ -353,6 +357,9 @@ PyCharm による変更の同期をとるパスの設定を行います。
 Remote Server の Docker Container 上の `Project Workspace` をそれぞれ
 Local Path と Remote Path に設定します。
 こうすることで、Local Path に行った修正が Remote Path に ssh(sftp) で反映されるようになります。
+
+反映されていない場合は、 PyCharm 上でフォルダを右クリックして、 `Deployment -> Upload` を
+選択して、明示的にファイル・ディレクトリをアップロードすることができます。
 
 ### 3. Remote Interpreter Path
 Remote Interpreter にパスを設定したい場合は、
