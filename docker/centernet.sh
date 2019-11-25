@@ -1,6 +1,7 @@
 #!/bin/sh
 docker run --detach \
   -p 8888:8888 \
+  -p 6006:6006 \
   -p 2222:22 \
   --privileged \
   --gpus all \

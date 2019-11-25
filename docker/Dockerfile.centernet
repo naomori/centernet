@@ -14,6 +14,10 @@ RUN set -x && \
         libgl1-mesa-glx \
         openssh-server
 
+COPY sshd_config /etc/ssh/
+RUN : "make directory for sshd" && \
+    mkdir -p /var/run/sshd
+
 RUN : "add proxy settings for conda" && { \
     echo "proxy_servers:"; \
     echo "    http: http://proxy.mei.co.jp:8080"; \
@@ -43,15 +47,23 @@ RUN : "install necessary packages" && \
     conda install -y -c conda-forge opencv=4.1.1 && \
     conda install -y -c conda-forge numba easydict scipy && \
     conda install -y -c conda-forge progress matplotlib && \
+    conda install -y -c conda-forge pandas && \
     conda install -y -c conda-forge pycocotools && \
-    conda install -y -c conda-forge jupyterlab
-
-ENV NOTVISIBLE "in users profile"
-RUN echo "export VISIBLE=now" >> /etc/profile
+    conda install -y -c conda-forge jupyter && \
+    conda install -y -c conda-forge jupyterlab && \
+    conda install -y -c conda-forge tensorflow-gpu=1.15 && \
+    conda install -y -c conda-forge tensorboardx=1.9
 
 COPY jupyter_notebook_config.py /root/.jupyter/
 COPY jupyterlab_start.sh /usr/local/bin/
-COPY sshd_config /etc/ssh/
+RUN : "create jupyter config file" && { \
+    echo "import sys,os,os.path "; \
+    echo "os.environ['HTTP_PROXY']=\"http://proxy.mei.co.jp:8080\""; \
+    echo "os.environ['HTTPS_PROXY']=\"http://proxy.mei.co.jp:8080\""; \
+} | tee /root/.ipython/profile_default/startup/00-startup.py
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
 
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
