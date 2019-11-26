@@ -57,6 +57,7 @@ RUN : "install necessary packages" && \
 COPY jupyter_notebook_config.py /root/.jupyter/
 COPY jupyterlab_start.sh /usr/local/bin/
 RUN : "create jupyter config file" && { \
+    mkdir -p /root/.ipython/profile_default/startup; \
     echo "import sys,os,os.path "; \
     echo "os.environ['HTTP_PROXY']=\"http://proxy.mei.co.jp:8080\""; \
     echo "os.environ['HTTPS_PROXY']=\"http://proxy.mei.co.jp:8080\""; \
