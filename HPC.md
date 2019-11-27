@@ -232,6 +232,10 @@ gcc-7.3.0 を利用するよう環境変数を設定します。
 $ export PATH=/apps/gcc/7.3.0/bin:$PATH
 $ export LD_LIBRARY_PATH=/apps/gcc/7.3.0/lib64:$LD_LIBRARY_PATH
 ```
+じゃなくて、`module load`すれば良いみたいです。
+```bash
+$ module load gcc/7.4.0
+```
 
 miniconda のバージョンは現時点(2019/11/06)で最新のものをインストールします。
 ```bash
@@ -274,7 +278,7 @@ $ conda activate centernet
 (centernet)$ conda update -n base -c defaults conda
 (centernet)$ conda install conda-build
 (centernet)$ conda install pytorch=1.1 torchvision -c pytorch
-(centernet)$ conda install cython
+(centernet)$ conda install -c conda-forge cython
 (centernet)$ conda install -c conda-forge opencv=4.1.1
 (centernet)$ conda install -c conda-forge numba easydict scipy
 (centernet)$ conda install -c conda-forge progress matplotlib
@@ -309,10 +313,9 @@ $ module load cuda/10.1/10.1.243 cudnn/7.6/7.6.4 nccl/2.4/2.4.8-1
 $ conda activate centernet
 ```
 
-gcc-7.3.0 を利用するよう環境変数を設定します。
+gcc-7.4.0 を利用します。
 ```bash
-$ export PATH=/apps/gcc/7.3.0/bin:$PATH
-$ export LD_LIBRARY_PATH=/apps/gcc/7.3.0/lib64:$LD_LIBRARY_PATH
+$ module load gcc/7.4.0
 ```
 
 まずは１つ目。
