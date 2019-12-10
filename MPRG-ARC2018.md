@@ -8,7 +8,7 @@ Validationには[MPRG][]が提供してくれている[評価用ソフトウェ�
 - - -
 
 ## Datasets
-[CenterNet][]では、[COCO][],[PASCOL VOC][]を使った評価結果で優位性を主張しています。
+[CenterNet][]では、[COCO][],[PASCAL VOC][]を使った評価結果で優位性を主張しています。
 したがって、[MPRG-ARC2017用のデータセット][]をどちらかのデータセット形式に変換し、
 Training&Validationに使用することにします。
 
